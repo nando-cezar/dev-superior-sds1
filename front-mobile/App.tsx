@@ -1,10 +1,9 @@
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { AppLoading } from 'expo';
 import { useFonts, Play_400Regular, Play_700Bold } from '@expo-google-fonts/play';
-
 import Routes from './src/routes';
+import AppLoading from 'expo-app-loading/build/AppLoading';
 
 export default function App() {
   let [fontsLoaded] = useFonts({

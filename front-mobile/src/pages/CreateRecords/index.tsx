@@ -1,25 +1,64 @@
-import React, {useState} from 'react';
-import {Text, View, TextInput, StyleSheet} from 'react-native';
+import React, {useState,useEffect} from 'react';
+import {View, TextInput, StyleSheet, Text, Alert} from 'react-native';
 import Header from '../../components/Header';
 import PlatformCard from '../../components/PlatformCard';
 import { GamePlatform } from '../../components/PlatformCard/types';
 import RNPickerSelect from 'react-native-picker-select';
 import { FontAwesome5 as Icon} from '@expo/vector-icons';
-
+import axios from 'axios';
+import { Game } from './types';
+import { RectButton } from 'react-native-gesture-handler';
 
 const placeholder = {
   label: 'Selecione o game',
   value: null
 }
 
+const BASE_URL = 'HTTP://192.168.100.43:8080';
+
+const mapSelectValue = (games: Game[]) => {
+  return games.map(game => ({
+    ...game,
+    label: game.title,
+    value: game.id
+  }));
+}
+
 const CreateRecords = () => {
 
+  const[name, setName] = useState('');
+  const[age, setAge] = useState('');
   const[platform, setPlatform] = useState<GamePlatform>();
   const[selectedGame, setSelectedGame] = useState('');
+  const[allGames, setAllGames] = useState<Game[]>([]);
+  const[filteredGames, setFilteredGames] = useState<Game[]>([]);
 
   const handleChangePlatform = (selectedPlatform: GamePlatform) => {
     setPlatform(selectedPlatform);
+    const gamesByPlatform = allGames.filter(
+      game => game.platform === selectedPlatform
+    )
+    setFilteredGames(gamesByPlatform);
   }
+
+  const handleSubmit = () => {
+    const payload = {name, age, gameId: selectedGame};
+
+    axios.post(`${BASE_URL}/records`, payload).then(() => {
+      Alert.alert('Dados salvos com sucesso!');
+      setName('');
+      setAge('');
+      setSelectedGame('');
+      setPlatform(undefined);
+    }).catch(() => Alert.alert('Erro ao salvar infomações!'))
+  }
+
+  useEffect(() => {
+    axios.get(`${BASE_URL}/games`).then(response => {
+      const selectValues = mapSelectValue(response.data);
+      setAllGames(selectValues);
+    }).catch(() => Alert.alert('Erro ao listar os jogos!'))
+  }, [])
 
   return (
     <>
@@ -29,6 +68,8 @@ const CreateRecords = () => {
           style={styles.inputText}
           placeholder="Nome"
           placeholderTextColor='#9E9E9E'
+          onChangeText={text => setName(text)}
+          value={name}
         />
         <TextInput 
           keyboardType="numeric"
@@ -36,6 +77,8 @@ const CreateRecords = () => {
           placeholder="Idade"
           placeholderTextColor='#9E9E9E'
           maxLength={3}
+          onChangeText={text => setAge(text)}
+          value={age}
         />
         <View style={styles.platformContainer}>
           <PlatformCard 
@@ -62,18 +105,24 @@ const CreateRecords = () => {
           onValueChange={value => {
             setSelectedGame(value);
           }}
-          items={[
-            {label:'' , value: ''}
-          ]}
+          value={selectedGame}
+          items={filteredGames}
           style={pickerSelectStyles}
           Icon={() => {
-            <Icon 
+            return <Icon 
               name="chevron-down" 
               size={25}
               color="#9E9E9E"
-      />
+            />
           }}
         />
+        <View style={styles.footer}>
+          <RectButton style={styles.button} onPress={handleSubmit}>
+            <Text style={styles.buttonText}>
+              SALVAR
+            </Text>
+          </RectButton>
+        </View>
       </View>
       
     </>
